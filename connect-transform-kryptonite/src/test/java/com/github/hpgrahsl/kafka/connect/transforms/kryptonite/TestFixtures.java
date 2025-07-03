@@ -168,39 +168,71 @@ public class TestFixtures {
 
     static {
         TEST_OBJ_SCHEMA_1 = SchemaBuilder.struct()
-          .field("id", Schema.STRING_SCHEMA)
-          .field("myString", Schema.STRING_SCHEMA)
-          .field("myInt32",Schema.INT32_SCHEMA)
-          .field("myInt64",Schema.INT64_SCHEMA)
-          .field("myBoolean", Schema.BOOLEAN_SCHEMA)
-          .field("mySubDoc1", SchemaBuilder.struct().field("myString",Schema.STRING_SCHEMA).build())
-          .field("myArray1", SchemaBuilder.array(Schema.STRING_SCHEMA).build())
-          .field("mySubDoc2", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.INT32_SCHEMA).build())
-          .field("myBytes", Schema.BYTES_SCHEMA)
+          .field("HRCo", Schema.INT32_SCHEMA)
+          .field("HRRef", Schema.INT32_SCHEMA)
+          .field("EffectiveDate",Schema.INT64_SCHEMA) // 2011-11-01T00:00:00Z
+          .field("Type",Schema.STRING_SCHEMA)
+          .field("OldSalary",Schema.STRING_SCHEMA)
+          .field("NewSalary",Schema.STRING_SCHEMA)
+          .field("NewPositionCode",Schema.STRING_SCHEMA)
+          //.field("NextDate",Schema.INT64_SCHEMA)
+          .field("UpdatedYN",Schema.STRING_SCHEMA)
+          .field("HistSeq",Schema.INT32_SCHEMA)
+          .field("CalcYN",Schema.STRING_SCHEMA)
+          .field("BatchId",Schema.INT32_SCHEMA)
+          //.field("InUseBatchId",Schema.INT32_SCHEMA)
+          //.field("InUseMth",Schema.INT64_SCHEMA)
+          //.field("UniqueAttchID",Schema.STRING_SCHEMA)
+          .field("KeyID",Schema.INT64_SCHEMA)
+          .field("__op",Schema.STRING_SCHEMA)
+          .field("__ts_ms", Schema.INT64_SCHEMA) // 2024-03-31T12:18:39.894Z
+          .field("__deleted",Schema.STRING_SCHEMA)
+          .field("EnterpriseId",Schema.STRING_SCHEMA)
           .build();
 
         TEST_OBJ_STRUCT_1 = new Struct(TEST_OBJ_SCHEMA_1)
-          .put("id","1234567890")
-          .put("myString","some foo bla text")
-          .put("myInt32",42)
-          .put("myInt64",4294967294L)
-          .put("myBoolean",true)
-          .put("mySubDoc1",new Struct(TEST_OBJ_SCHEMA_1.field("mySubDoc1").schema())
-              .put("myString","hello json")
-          )
-          .put("myArray1",List.of("str_1","str_2","...","str_N"))
-          .put("mySubDoc2",Map.of("k1",9,"k2",8,"k3",7))
-          .put("myBytes", new byte[]{75, 97, 102, 107, 97, 32, 114, 111, 99, 107, 115, 33});
+          .put("HRCo",253)
+          .put("HRRef",2)
+          .put("EffectiveDate",1320105600000L) // 2011-11-01T00:00:00Z
+          .put("Type","H")
+          //.put("OldSalary","AA==")
+          //.put("NewSalary","NWfg")
+          .put("NewPositionCode","CARP")
+          //.put("NextDate",null)
+          .put("UpdatedYN","Y")
+          .put("HistSeq",1)
+          .put("CalcYN","N")
+          .put("BatchId",3)
+          //.put("InUseBatchId",null)
+          //.put("InUseMth",null)
+          //.put("UniqueAttchID",null)
+          .put("KeyID",622L)
+          .put("__op","r")
+          .put("__ts_ms",1751305919894L) // 2024-03-31T12:18:39.894Z
+          .put("__deleted","false")
+          .put("EnterpriseId","5683");
+
 
           TEST_OBJ_MAP_1 = new LinkedHashMap<>();
-          TEST_OBJ_MAP_1.put("id","1234567890");
-          TEST_OBJ_MAP_1.put("myString","some foo bla text");
-          TEST_OBJ_MAP_1.put("myInt32",42);
-          TEST_OBJ_MAP_1.put("myInt64",4294967294L);
-          TEST_OBJ_MAP_1.put("myBoolean",true);
-          TEST_OBJ_MAP_1.put("mySubDoc1",Map.of("myString","hello json"));
-          TEST_OBJ_MAP_1.put("myArray1",List.of("str_1","str_2","...","str_N"));
-          TEST_OBJ_MAP_1.put("mySubDoc2",Map.of("k1",9,"k2",8,"k3",7));
-          TEST_OBJ_MAP_1.put("myBytes", new byte[]{75, 97, 102, 107, 97, 32, 114, 111, 99, 107, 115, 33});
+          TEST_OBJ_MAP_1.put("HRCo",253);
+          TEST_OBJ_MAP_1.put("HRRef",2);
+          TEST_OBJ_MAP_1.put("EffectiveDate",1320105600000L); // 2011-11-01T00:00:00Z
+          TEST_OBJ_MAP_1.put("Type","H");
+          //TEST_OBJ_MAP_1.put("OldSalary","AA==");
+          //TEST_OBJ_MAP_1.put("NewSalary","NWfg");
+          TEST_OBJ_MAP_1.put("NewPositionCode","CARP");
+          TEST_OBJ_MAP_1.put("NextDate",null);
+          TEST_OBJ_MAP_1.put("UpdatedYN","Y");
+          TEST_OBJ_MAP_1.put("HistSeq",1);
+          TEST_OBJ_MAP_1.put("CalcYN","N");
+          TEST_OBJ_MAP_1.put("BatchId",3);
+          TEST_OBJ_MAP_1.put("InUseBatchId",null);
+          TEST_OBJ_MAP_1.put("InUseMth",null);
+          TEST_OBJ_MAP_1.put("UniqueAttchID",null);
+          TEST_OBJ_MAP_1.put("KeyID",622L);
+          TEST_OBJ_MAP_1.put("__op","r");
+          TEST_OBJ_MAP_1.put("__ts_ms",1751305919894L); // 2024-03-31T12:18:39.894Z
+          TEST_OBJ_MAP_1.put("__deleted","false");
+          TEST_OBJ_MAP_1.put("EnterpriseId","5683");
     }
 }

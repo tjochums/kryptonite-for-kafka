@@ -34,7 +34,7 @@ public class SchemalessRecordHandler extends RecordHandler {
   private static final Logger LOGGER = LoggerFactory.getLogger(SchemalessRecordHandler.class);
 
   public SchemalessRecordHandler(AbstractConfig config,
-                                 SerdeProcessor serdeProcessor, Kryptonite kryptonite,
+                                 ExpandedSerdesProcessor serdeProcessor, Kryptonite kryptonite,
                                  CipherMode cipherMode,
                                  Map<String, FieldConfig> fieldConfig) {
     super(config, serdeProcessor, kryptonite, cipherMode, fieldConfig);

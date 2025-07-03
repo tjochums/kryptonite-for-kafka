@@ -7,6 +7,7 @@
     </appender>
 
     <logger name="com.github.hpgrahsl.kafka.connect.transforms" level="DEBUG" />
+    <logger name="com.github.hpgrahsl.kryptonite" level="DEBUG" />
 
     <root level="INFO">
         <appender-ref ref="STDOUT" />

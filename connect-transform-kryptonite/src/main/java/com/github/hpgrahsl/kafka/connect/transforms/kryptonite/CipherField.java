@@ -156,7 +156,7 @@ public abstract class CipherField<R extends ConnectRecord<R>> implements Transfo
               .readValue(config.getString(FIELD_CONFIG), new TypeReference<Set<FieldConfig>>() {})
               .stream().collect(Collectors.toMap(FieldConfig::getName, Function.identity()));
       var kryptonite = Kryptonite.createFromConfig(adaptToNormalizedStringsMap(config));
-      var serdeProcessor = new KryoSerdeProcessor();
+      var serdeProcessor = new MessagePackSerdesProcessor();
       recordHandlerWithSchema = new SchemaawareRecordHandler(config, serdeProcessor, kryptonite, CipherMode
           .valueOf(
           config.getString(CIPHER_MODE)),fieldPathMap);

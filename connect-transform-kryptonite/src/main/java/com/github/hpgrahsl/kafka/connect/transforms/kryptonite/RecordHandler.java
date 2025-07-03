@@ -18,10 +18,9 @@ package com.github.hpgrahsl.kafka.connect.transforms.kryptonite;
 
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import com.github.hpgrahsl.kafka.connect.SerializedEncryptedField;
 import com.github.hpgrahsl.kryptonite.*;
 import com.github.hpgrahsl.kryptonite.config.KryptoniteSettings;
-import com.github.hpgrahsl.kryptonite.serdes.KryoInstance;
-import com.github.hpgrahsl.kryptonite.serdes.SerdeProcessor;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.errors.DataException;
 import org.slf4j.Logger;
@@ -36,7 +35,7 @@ public abstract class RecordHandler implements FieldPathMatcher {
   private static final Logger LOGGER = LoggerFactory.getLogger(RecordHandler.class);
 
   private final AbstractConfig config;
-  private final SerdeProcessor serdeProcessor;
+  private final ExpandedSerdesProcessor serdeProcessor;
   private final Kryptonite kryptonite;
 
   protected final String pathDelimiter;
@@ -44,7 +43,7 @@ public abstract class RecordHandler implements FieldPathMatcher {
   protected final Map<String, FieldConfig> fieldConfig;
 
   public RecordHandler(AbstractConfig config,
-      SerdeProcessor serdeProcessor, Kryptonite kryptonite,
+      ExpandedSerdesProcessor serdeProcessor, Kryptonite kryptonite,
       CipherMode cipherMode,
       Map<String, FieldConfig> fieldConfig) {
     this.config = config;
@@ -72,15 +71,14 @@ public abstract class RecordHandler implements FieldPathMatcher {
         var valueBytes = serdeProcessor.objectToBytes(object);
         var encryptedField = kryptonite.cipherField(valueBytes, PayloadMetaData.from(fieldMetaData));
         LOGGER.debug("encrypted field: {}",encryptedField);
-        var output = new Output(new ByteArrayOutputStream());
-        KryoInstance.get().writeObject(output,encryptedField);
-        var encodedField = Base64.getEncoder().encodeToString(output.toBytes());
+        var serializedEncryptedField = new SerializedEncryptedField(encryptedField.getMetaData(), encryptedField.ciphertext());
+        String encodedField = serdeProcessor.doTheThing(serializedEncryptedField);
         LOGGER.trace("encoded field: {}",encodedField);
         return encodedField;
       } else {
-        var decodedField = Base64.getDecoder().decode((String)object);
-        LOGGER.trace("decoded field: {}",decodedField);
-        var encryptedField = KryoInstance.get().readObject(new Input(decodedField), EncryptedField.class);
+        var serializedEncryptedField = serdeProcessor.undoTheThing((String)object, SerializedEncryptedField.class);
+        var encryptedField = new EncryptedField(serializedEncryptedField.metaData, serializedEncryptedField.ciphertext);
+        LOGGER.debug("decoded translated field: {}",encryptedField);
         var plaintext = kryptonite.decipherField(encryptedField);
         LOGGER.trace("decrypted field: {}",plaintext);
         var restoredField = serdeProcessor.bytesToObject(plaintext);
