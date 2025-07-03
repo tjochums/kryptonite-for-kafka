@@ -22,15 +22,15 @@
   <parent>
     <groupId>com.github.hpgrahsl</groupId>
     <artifactId>kryptonite-for-kafka</artifactId>
-    <version>0.5.0</version>
+    <version>0.5.1</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>connect-transform-kryptonite</artifactId>
-  <version>0.5.0</version>
+  <version>0.5.17</version>
   <packaging>jar</packaging>
 
   <properties>
-    <kryptonite.version>0.5.0</kryptonite.version>
+    <kryptonite.version>0.5.1</kryptonite.version>
     <kafka.version>4.0.0</kafka.version>
     <jackson.version>2.18.3</jackson.version>
     <logback.version>1.2.13</logback.version>
@@ -42,6 +42,11 @@
       <groupId>com.github.hpgrahsl</groupId>
       <artifactId>kryptonite</artifactId>
       <version>${kryptonite.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.msgpack</groupId>
+        <artifactId>jackson-dataformat-msgpack</artifactId>
+        <version>0.9.9</version>
     </dependency>
     <dependency>
       <groupId>org.apache.kafka</groupId>
@@ -117,7 +122,7 @@
         <version>${surefire.plugin.version}</version>
         <configuration>
           <argLine>
-           ${jdk.17.plus.jvm.options}
+           ${jdk.17.plus.jvm.options} --add-opens=java.base/java.util=ALL-UNNAMED
           </argLine>
         </configuration>
       </plugin>

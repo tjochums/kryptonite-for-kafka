@@ -45,6 +45,10 @@ public class EncryptedField implements Cipherable {
     return metaData;
   }
 
+  public byte[] getCiphertext() {
+    return ciphertext;
+  }
+
   @Override
   public String toString() {
     return "EncryptedField{" +

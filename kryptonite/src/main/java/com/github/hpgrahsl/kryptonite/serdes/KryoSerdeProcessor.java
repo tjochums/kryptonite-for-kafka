@@ -20,6 +20,8 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import com.github.hpgrahsl.kryptonite.EncryptedField;
+
 import org.apache.kafka.connect.data.ConnectSchema;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -28,6 +30,7 @@ import org.apache.kafka.connect.data.Struct;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Map;
 
 public class KryoSerdeProcessor implements SerdeProcessor {
@@ -51,6 +54,19 @@ public class KryoSerdeProcessor implements SerdeProcessor {
   public Object bytesToObject(byte[] bytes) {
     var input = new Input(bytes);
     return KryoInstance.get().readClassAndObject(input);
+  }
+
+  public String encodeField(EncryptedField object){
+    var output = new Output(new ByteArrayOutputStream());
+    KryoInstance.get().writeObject(output,object);
+    var encodedField = Base64.getEncoder().encodeToString(output.toBytes());
+    return encodedField;
+  }
+
+  public EncryptedField decodeField(String encodedField){
+    var decodedField = Base64.getDecoder().decode((String)encodedField);
+    var encryptedField = KryoInstance.get().readObject(new Input(decodedField), EncryptedField.class);
+    return encryptedField;
   }
 
   public static class StructSerializer extends Serializer<Struct> {

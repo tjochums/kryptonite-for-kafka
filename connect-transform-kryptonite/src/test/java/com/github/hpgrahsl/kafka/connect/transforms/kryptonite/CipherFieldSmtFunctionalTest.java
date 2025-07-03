@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.hpgrahsl.kafka.connect.transforms.kryptonite.CipherField.FieldMode;
+import com.github.hpgrahsl.kafka.connect.transforms.kryptonite.messagepack.MessagePackSerdesProcessor;
 import com.github.hpgrahsl.kryptonite.Kryptonite.CipherSpec;
 import com.github.hpgrahsl.kryptonite.config.KryptoniteSettings;
 import com.github.hpgrahsl.kryptonite.config.KryptoniteSettings.KekType;
@@ -29,6 +30,7 @@ import com.github.hpgrahsl.kryptonite.config.KryptoniteSettings.KeySource;
 import com.github.hpgrahsl.kryptonite.config.KryptoniteSettings.KmsType;
 import com.github.hpgrahsl.kryptonite.crypto.tink.TinkAesGcm;
 import com.github.hpgrahsl.kryptonite.crypto.tink.TinkAesGcmSiv;
+import com.github.hpgrahsl.kryptonite.serdes.KryoSerdeProcessor;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -57,18 +59,18 @@ public class CipherFieldSmtFunctionalTest {
     @MethodSource("com.github.hpgrahsl.kafka.connect.transforms.kryptonite.CipherFieldSmtFunctionalTest#generateValidParamsWithoutCloudKms")
     @DisplayName("apply SMT decrypt(encrypt(plaintext)) = plaintext for schemaless record with param combinations")
     void encryptDecryptSchemalessRecordTest(String cipherDataKeys,FieldMode fieldMode, CipherSpec cipherSpec, String keyId1, String keyId2, 
-        KeySource keySource, KmsType kmsType, String kmsConfig, KekType kekType, String kekConfig, String kekUri) {
-      
-      performSchemalessRecordTest(cipherDataKeys, fieldMode, cipherSpec, keyId1, keyId2, keySource, kmsType, kmsConfig, kekType, kekConfig, kekUri);
+        KeySource keySource, KmsType kmsType, String kmsConfig, KekType kekType, String kekConfig, String kekUri, String serdesProcessorClass) {
+
+      performSchemalessRecordTest(cipherDataKeys, fieldMode, cipherSpec, keyId1, keyId2, keySource, kmsType, kmsConfig, kekType, kekConfig, kekUri, serdesProcessorClass);
     }
    
     @ParameterizedTest
     @MethodSource("com.github.hpgrahsl.kafka.connect.transforms.kryptonite.CipherFieldSmtFunctionalTest#generateValidParamsWithoutCloudKms")
     @DisplayName("apply SMT decrypt(encrypt(plaintext)) = plaintext for schemaful record with param combinations")
     void encryptDecryptSchemafulRecordTest(String cipherDataKeys,FieldMode fieldMode, CipherSpec cipherSpec, String keyId1, String keyId2, 
-        KeySource keySource, KmsType kmsType, String kmsConfig, KekType kekType, String kekConfig, String kekUri) {
-        
-      performSchemafulRecordTest(cipherDataKeys, fieldMode, cipherSpec, keyId1, keyId2, keySource, kmsType, kmsConfig, kekType, kekConfig, kekUri);
+        KeySource keySource, KmsType kmsType, String kmsConfig, KekType kekType, String kekConfig, String kekUri, String serdesProcessorClass) {
+
+      performSchemafulRecordTest(cipherDataKeys, fieldMode, cipherSpec, keyId1, keyId2, keySource, kmsType, kmsConfig, kekType, kekConfig, kekUri, serdesProcessorClass);
   }
 
   @Nested
@@ -78,24 +80,24 @@ public class CipherFieldSmtFunctionalTest {
     @MethodSource("com.github.hpgrahsl.kafka.connect.transforms.kryptonite.CipherFieldSmtFunctionalTest#generateValidParamsWithCloudKms")
     @DisplayName("apply SMT decrypt(encrypt(plaintext)) = plaintext for schemaless record with param combinations")
     void encryptDecryptSchemalessRecordTest(String cipherDataKeys,FieldMode fieldMode, CipherSpec cipherSpec, String keyId1, String keyId2, 
-        KeySource keySource, KmsType kmsType, String kmsConfig, KekType kekType, String kekConfig, String kekUri) {
-      
-      performSchemalessRecordTest(cipherDataKeys, fieldMode, cipherSpec, keyId1, keyId2, keySource, kmsType, kmsConfig, kekType, kekConfig, kekUri);
+        KeySource keySource, KmsType kmsType, String kmsConfig, KekType kekType, String kekConfig, String kekUri, String serdesProcessorClass) {
+
+      performSchemalessRecordTest(cipherDataKeys, fieldMode, cipherSpec, keyId1, keyId2, keySource, kmsType, kmsConfig, kekType, kekConfig, kekUri, serdesProcessorClass);
     }
    
     @ParameterizedTest
     @MethodSource("com.github.hpgrahsl.kafka.connect.transforms.kryptonite.CipherFieldSmtFunctionalTest#generateValidParamsWithCloudKms")
     @DisplayName("apply SMT decrypt(encrypt(plaintext)) = plaintext for schemaful record with param combinations")
     void encryptDecryptSchemafulRecordTest(String cipherDataKeys,FieldMode fieldMode, CipherSpec cipherSpec, String keyId1, String keyId2, 
-        KeySource keySource, KmsType kmsType, String kmsConfig, KekType kekType, String kekConfig, String kekUri) {
-        
-      performSchemafulRecordTest(cipherDataKeys, fieldMode, cipherSpec, keyId1, keyId2, keySource, kmsType, kmsConfig, kekType, kekConfig, kekUri);
+        KeySource keySource, KmsType kmsType, String kmsConfig, KekType kekType, String kekConfig, String kekUri, String serdesProcessorClass) {
+
+      performSchemafulRecordTest(cipherDataKeys, fieldMode, cipherSpec, keyId1, keyId2, keySource, kmsType, kmsConfig, kekType, kekConfig, kekUri, serdesProcessorClass);
     }
-  }
+   }
 
   @SuppressWarnings("unchecked")
   void performSchemalessRecordTest(String cipherDataKeys,FieldMode fieldMode, CipherSpec cipherSpec, String keyId1, String keyId2, 
-        KeySource keySource, KmsType kmsType, String kmsConfig, KekType kekType, String kekConfig, String kekUri) {
+        KeySource keySource, KmsType kmsType, String kmsConfig, KekType kekType, String kekConfig, String kekUri, String serdesProcessorClass)  {
       
       var encProps = new HashMap<String, Object>();
       encProps.put(KryptoniteSettings.CIPHER_MODE, "ENCRYPT");
@@ -122,6 +124,7 @@ public class CipherFieldSmtFunctionalTest {
       encProps.put(KryptoniteSettings.KEK_TYPE,kekType.name());
       encProps.put(KryptoniteSettings.KEK_CONFIG,kekConfig);
       encProps.put(KryptoniteSettings.KEK_URI,kekUri);
+      encProps.put(CipherField.SERDES_TYPE, serdesProcessorClass);
   
       var encryptTransform = new CipherField.Value<SourceRecord>();
       encryptTransform.configure(encProps);
@@ -176,6 +179,7 @@ public class CipherFieldSmtFunctionalTest {
       decProps.put(KryptoniteSettings.KEK_TYPE,encProps.get(KryptoniteSettings.KEK_TYPE));
       decProps.put(KryptoniteSettings.KEK_CONFIG,encProps.get(KryptoniteSettings.KEK_CONFIG));
       decProps.put(KryptoniteSettings.KEK_URI,encProps.get(KryptoniteSettings.KEK_URI));
+      decProps.put(CipherField.SERDES_TYPE, encProps.get(CipherField.SERDES_TYPE));
   
       var decryptTransform = new CipherField.Value<SinkRecord>();
       decryptTransform.configure(decProps);
@@ -187,7 +191,7 @@ public class CipherFieldSmtFunctionalTest {
   }
 
   void performSchemafulRecordTest(String cipherDataKeys,FieldMode fieldMode, CipherSpec cipherSpec, String keyId1, String keyId2, 
-        KeySource keySource, KmsType kmsType, String kmsConfig, KekType kekType, String kekConfig, String kekUri) {
+        KeySource keySource, KmsType kmsType, String kmsConfig, KekType kekType, String kekConfig, String kekUri, String serdesProcessorClass) {
 var encProps = new HashMap<String, Object>();
       encProps.put(KryptoniteSettings.CIPHER_MODE, "ENCRYPT");
       encProps.put(KryptoniteSettings.FIELD_CONFIG,
@@ -214,6 +218,7 @@ var encProps = new HashMap<String, Object>();
       encProps.put(KryptoniteSettings.KEK_TYPE,kekType.name());
       encProps.put(KryptoniteSettings.KEK_CONFIG,kekConfig);
       encProps.put(KryptoniteSettings.KEK_URI,kekUri);
+      encProps.put(CipherField.SERDES_TYPE, serdesProcessorClass);
   
       var encryptTransform = new CipherField.Value<SourceRecord>();
       encryptTransform.configure(encProps);
@@ -270,6 +275,7 @@ var encProps = new HashMap<String, Object>();
       decProps.put(KryptoniteSettings.KEK_TYPE,encProps.get(KryptoniteSettings.KEK_TYPE));
       decProps.put(KryptoniteSettings.KEK_CONFIG,encProps.get(KryptoniteSettings.KEK_CONFIG));
       decProps.put(KryptoniteSettings.KEK_URI,encProps.get(KryptoniteSettings.KEK_URI));
+      decProps.put(CipherField.SERDES_TYPE, encProps.get(CipherField.SERDES_TYPE));
   
       var decryptTransform = new CipherField.Value<SinkRecord>();
       decryptTransform.configure(decProps);
@@ -307,14 +313,22 @@ var encProps = new HashMap<String, Object>();
 
   static List<Arguments> generateValidParamsWithoutCloudKms() {
     return List.of(
-      Arguments.of(
-        TestFixtures.CIPHER_DATA_KEYS_CONFIG,FieldMode.ELEMENT,CipherSpec.fromName(TinkAesGcm.CIPHER_ALGORITHM),"keyA","keyB",
-        KeySource.CONFIG,KmsType.NONE,"{}",KekType.NONE,"{}",""
-      ),
-      Arguments.of(
-        TestFixtures.CIPHER_DATA_KEYS_CONFIG,FieldMode.OBJECT,CipherSpec.fromName(TinkAesGcmSiv.CIPHER_ALGORITHM),"key9","key8",
-        KeySource.CONFIG,KmsType.NONE,"{}",KekType.NONE,"{}",""
-      )
+        Arguments.of(
+          TestFixtures.CIPHER_DATA_KEYS_CONFIG,FieldMode.ELEMENT,CipherSpec.fromName(TinkAesGcm.CIPHER_ALGORITHM),"keyA","keyB",
+          KeySource.CONFIG,KmsType.NONE,"{}",KekType.NONE,"{}","",KryoSerdeProcessor.class.getName()
+        ),
+        Arguments.of(
+          TestFixtures.CIPHER_DATA_KEYS_CONFIG,FieldMode.OBJECT,CipherSpec.fromName(TinkAesGcmSiv.CIPHER_ALGORITHM),"key9","key8",
+          KeySource.CONFIG,KmsType.NONE,"{}",KekType.NONE,"{}","", KryoSerdeProcessor.class.getName()
+        ),
+        Arguments.of(
+          TestFixtures.CIPHER_DATA_KEYS_CONFIG,FieldMode.ELEMENT,CipherSpec.fromName(TinkAesGcm.CIPHER_ALGORITHM),"keyA","keyB",
+          KeySource.CONFIG,KmsType.NONE,"{}",KekType.NONE,"{}","",MessagePackSerdesProcessor.class.getName()
+        ),
+        Arguments.of(
+          TestFixtures.CIPHER_DATA_KEYS_CONFIG,FieldMode.OBJECT,CipherSpec.fromName(TinkAesGcmSiv.CIPHER_ALGORITHM),"key9","key8",
+          KeySource.CONFIG,KmsType.NONE,"{}",KekType.NONE,"{}","",MessagePackSerdesProcessor.class.getName()
+        )
     );
   }
 
@@ -324,32 +338,38 @@ var encProps = new HashMap<String, Object>();
         Arguments.of(
           TestFixtures.CIPHER_DATA_KEYS_CONFIG_ENCRYPTED,FieldMode.OBJECT,CipherSpec.fromName(TinkAesGcm.CIPHER_ALGORITHM),"keyX","keyY",
           KeySource.CONFIG_ENCRYPTED,KmsType.NONE,"{}",
-          KekType.GCP,credentials.getProperty("test.kek.config"),credentials.getProperty("test.kek.uri")
+          KekType.GCP,credentials.getProperty("test.kek.config"),credentials.getProperty("test.kek.uri"),
+          KryoSerdeProcessor.class.getName()
         ),
         Arguments.of(
           TestFixtures.CIPHER_DATA_KEYS_CONFIG_ENCRYPTED,FieldMode.ELEMENT,CipherSpec.fromName(TinkAesGcmSiv.CIPHER_ALGORITHM),"key1","key0",
           KeySource.CONFIG_ENCRYPTED,KmsType.NONE,"{}",
-          KekType.GCP,credentials.getProperty("test.kek.config"),credentials.getProperty("test.kek.uri")
+          KekType.GCP,credentials.getProperty("test.kek.config"),credentials.getProperty("test.kek.uri"),
+          KryoSerdeProcessor.class.getName()
         ),
         Arguments.of(
           TestFixtures.CIPHER_DATA_KEYS_EMPTY,FieldMode.ELEMENT,CipherSpec.fromName(TinkAesGcm.CIPHER_ALGORITHM),"keyA","keyB",
           KeySource.KMS,KmsType.AZ_KV_SECRETS,credentials.getProperty("test.kms.config"),
-          KekType.NONE,"{}",""
+          KekType.NONE,"{}","",
+          KryoSerdeProcessor.class.getName()
         ),
         Arguments.of(
           TestFixtures.CIPHER_DATA_KEYS_EMPTY,FieldMode.OBJECT,CipherSpec.fromName(TinkAesGcmSiv.CIPHER_ALGORITHM),"key9","key8",
           KeySource.KMS,KmsType.AZ_KV_SECRETS,credentials.getProperty("test.kms.config"),
-          KekType.NONE,"{}",""
+          KekType.NONE,"{}","",
+          KryoSerdeProcessor.class.getName()
         ),
         Arguments.of(
           TestFixtures.CIPHER_DATA_KEYS_EMPTY,FieldMode.ELEMENT,CipherSpec.fromName(TinkAesGcm.CIPHER_ALGORITHM),"keyX","keyY",
           KeySource.KMS_ENCRYPTED,KmsType.AZ_KV_SECRETS,credentials.getProperty("test.kms.config.encrypted"),
-          KekType.GCP,credentials.getProperty("test.kek.config"),credentials.getProperty("test.kek.uri")
+          KekType.GCP,credentials.getProperty("test.kek.config"),credentials.getProperty("test.kek.uri"),
+          KryoSerdeProcessor.class.getName()
         ),
         Arguments.of(
           TestFixtures.CIPHER_DATA_KEYS_EMPTY,FieldMode.OBJECT,CipherSpec.fromName(TinkAesGcmSiv.CIPHER_ALGORITHM),"key1","key0",
           KeySource.KMS_ENCRYPTED,KmsType.AZ_KV_SECRETS,credentials.getProperty("test.kms.config.encrypted"),
-          KekType.GCP,credentials.getProperty("test.kek.config"),credentials.getProperty("test.kek.uri")
+          KekType.GCP,credentials.getProperty("test.kek.config"),credentials.getProperty("test.kek.uri"),
+          KryoSerdeProcessor.class.getName()
         )
     );
   }

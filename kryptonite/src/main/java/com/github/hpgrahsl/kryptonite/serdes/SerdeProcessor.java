@@ -16,6 +16,8 @@
 
 package com.github.hpgrahsl.kryptonite.serdes;
 
+import com.github.hpgrahsl.kryptonite.EncryptedField;
+
 public interface SerdeProcessor {
 
   byte[] objectToBytes(Object object,Class<?> clazz);
@@ -26,4 +28,7 @@ public interface SerdeProcessor {
 
   Object bytesToObject(byte[] bytes);
 
+  String encodeField(EncryptedField object);
+  
+  EncryptedField decodeField(String encodedField);
 }

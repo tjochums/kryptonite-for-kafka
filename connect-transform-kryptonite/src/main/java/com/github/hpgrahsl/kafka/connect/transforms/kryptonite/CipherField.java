@@ -23,6 +23,8 @@ import com.github.hpgrahsl.kafka.connect.transforms.kryptonite.validators.*;
 import com.github.hpgrahsl.kryptonite.CipherMode;
 import com.github.hpgrahsl.kryptonite.Kryptonite;
 import com.github.hpgrahsl.kryptonite.serdes.KryoSerdeProcessor;
+import com.github.hpgrahsl.kryptonite.serdes.SerdeProcessor;
+
 import org.apache.kafka.common.cache.Cache;
 import org.apache.kafka.common.cache.LRUCache;
 import org.apache.kafka.common.cache.SynchronizedCache;
@@ -38,6 +40,7 @@ import org.apache.kafka.connect.transforms.util.SimpleConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -62,6 +65,9 @@ public abstract class CipherField<R extends ConnectRecord<R>> implements Transfo
 
   public static final String OVERVIEW_DOC =
       "Encrypt / Decrypt specified record fields with either probabilistic or deterministic cryptography.";
+
+  public static final String SERDES_TYPE = "serdes_type";
+  public static final String SERDES_TYPE_DEFAULT = KryoSerdeProcessor.class.getName();
 
   public static final ConfigDef CONFIG_DEF = new ConfigDef()
       .define(FIELD_CONFIG, Type.STRING, ConfigDef.NO_DEFAULT_VALUE, new FieldConfigValidator(),
@@ -91,7 +97,9 @@ public abstract class CipherField<R extends ConnectRecord<R>> implements Transfo
       .define(KEK_CONFIG, Type.PASSWORD, KEK_CONFIG_DEFAULT, ConfigDef.Importance.LOW,
           "JSON object specifying the KMS-specific client authentication settings (currently only supports GCP Cloud KMS)")
       .define(KEK_URI, Type.PASSWORD, KEK_URI_DEFAULT, ConfigDef.Importance.LOW,
-          "remote/cloud KMS-specific URI to refer to the key encryption key if applicable (currently only supports GCP Cloud KMS key URIs)");
+          "remote/cloud KMS-specific URI to refer to the key encryption key if applicable (currently only supports GCP Cloud KMS key URIs)")
+      .define(SERDES_TYPE, Type.STRING, SERDES_TYPE_DEFAULT, ConfigDef.Importance.LOW,
+          "defines the SerdesProcessor implementation to be used for serializing / deserializing the encrypted fields");
 
   private static final String PURPOSE = "(de)cipher connect record fields";
 
@@ -156,19 +164,26 @@ public abstract class CipherField<R extends ConnectRecord<R>> implements Transfo
               .readValue(config.getString(FIELD_CONFIG), new TypeReference<Set<FieldConfig>>() {})
               .stream().collect(Collectors.toMap(FieldConfig::getName, Function.identity()));
       var kryptonite = Kryptonite.createFromConfig(adaptToNormalizedStringsMap(config));
-      var serdeProcessor = new KryoSerdeProcessor();
-      recordHandlerWithSchema = new SchemaawareRecordHandler(config, serdeProcessor, kryptonite, CipherMode
+      var serdesProcessorClass = config.getString(SERDES_TYPE);
+      LOGGER.debug("using SerdesProcessor x implementation class {}",props.get(SERDES_TYPE));
+      
+      Class<?> clazz = Class.forName(serdesProcessorClass);
+      SerdeProcessor serdesProcessor = (SerdeProcessor)clazz.getDeclaredConstructor().newInstance();
+      recordHandlerWithSchema = new SchemaawareRecordHandler(config, serdesProcessor, kryptonite, CipherMode
           .valueOf(
           config.getString(CIPHER_MODE)),fieldPathMap);
-      recordHandlerWithoutSchema = new SchemalessRecordHandler(config, serdeProcessor, kryptonite, CipherMode.valueOf(
+      recordHandlerWithoutSchema = new SchemalessRecordHandler(config, serdesProcessor, kryptonite, CipherMode.valueOf(
           config.getString(CIPHER_MODE)),fieldPathMap);
       schemaRewriter = new SchemaRewriter(fieldPathMap, FieldMode.valueOf(config.getString(
           FIELD_MODE)),CipherMode.valueOf(config.getString(CIPHER_MODE)), config.getString(PATH_DELIMITER));
       schemaCache = new SynchronizedCache<>(new LRUCache<>(16));
     } catch (JsonProcessingException e) {
-      throw new ConfigException(e.getMessage());
+        throw new ConfigException(e.getMessage());
+    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | InvocationTargetException |
+        IllegalArgumentException | NoSuchMethodException | SecurityException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
     }
-
   }
 
   private static Map<String,String> adaptToNormalizedStringsMap(SimpleConfig config) {
@@ -186,7 +201,8 @@ public abstract class CipherField<R extends ConnectRecord<R>> implements Transfo
       Map.entry(KMS_CONFIG, Optional.ofNullable(config.getPassword(KMS_CONFIG).value()).orElse(KMS_CONFIG_DEFAULT)),
       Map.entry(KEK_TYPE, Optional.ofNullable(config.getString(KEK_TYPE)).orElse(KEK_TYPE_DEFAULT)),
       Map.entry(KEK_CONFIG, Optional.ofNullable(config.getPassword(KEK_CONFIG).value()).orElse(KEK_CONFIG_DEFAULT)),
-      Map.entry(KEK_URI, Optional.ofNullable(config.getPassword(KEK_URI).value()).orElse(KEK_URI_DEFAULT))
+      Map.entry(KEK_URI, Optional.ofNullable(config.getPassword(KEK_URI).value()).orElse(KEK_URI_DEFAULT)),
+      Map.entry(SERDES_TYPE, Optional.ofNullable(config.getString(SERDES_TYPE)).orElse(SERDES_TYPE_DEFAULT))
     );
   }
 
@@ -209,7 +225,7 @@ public abstract class CipherField<R extends ConnectRecord<R>> implements Transfo
 
     @Override
     protected R newRecord(R record, Schema updatedSchema, Object updatedValue) {
-      return record.newRecord(record.topic(), record.kafkaPartition(), updatedSchema, updatedValue, record.valueSchema(), record.value(), record.timestamp());
+      return record.newRecord(record.topic(), record.kafkaPartition(), updatedSchema, updatedValue, record.valueSchema(), record.value(), record.timestamp(), record.headers());
     }
   }
 
@@ -226,8 +242,7 @@ public abstract class CipherField<R extends ConnectRecord<R>> implements Transfo
 
     @Override
     protected R newRecord(R record, Schema updatedSchema, Object updatedValue) {
-      return record.newRecord(record.topic(), record.kafkaPartition(), record.keySchema(), record.key(), updatedSchema, updatedValue, record.timestamp());
+      return record.newRecord(record.topic(), record.kafkaPartition(), record.keySchema(), record.key(), updatedSchema, updatedValue, record.timestamp(), record.headers());
     }
   }
-
 }
