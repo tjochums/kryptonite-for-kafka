@@ -25,12 +25,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.hpgrahsl.kryptonite.keys.KeyMaterialResolver;
 import com.github.hpgrahsl.kryptonite.keys.KeyNotFoundException;
 import java.util.Collection;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class AzureSecretResolver implements KeyMaterialResolver {
 
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
   private SecretClient secretClient;
+  private Set<String> secretNames;
 
   public AzureSecretResolver(String jsonKmsConfig) {
     try {
@@ -42,6 +44,7 @@ public class AzureSecretResolver implements KeyMaterialResolver {
             .clientSecret(keyVaultConfig.getClientSecret())
             .tenantId(keyVaultConfig.getTenantId())
             .build()).buildClient();
+      this.secretNames = Set.of(keyVaultConfig.getSecretNames());
     } catch (Exception exc) {
       throw new RuntimeException("failed to create " + AzureSecretResolver.class.getSimpleName(), exc);
     }
@@ -54,6 +57,7 @@ public class AzureSecretResolver implements KeyMaterialResolver {
   @Override
   public Collection<String> resolveIdentifiers() {
     return secretClient.listPropertiesOfSecrets().stream()
+        .filter(secretProperties -> secretNames.isEmpty() || secretNames.contains(secretProperties.getName()))
         .map(SecretProperties::getName)
         .collect(Collectors.toList());
   }

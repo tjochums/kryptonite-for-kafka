@@ -16,6 +16,7 @@
 
 package com.github.hpgrahsl.kryptonite.kms.azure;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 public class AzureKeyVaultConfig {
@@ -24,16 +25,18 @@ public class AzureKeyVaultConfig {
   private String tenantId;
   private String clientSecret;
   private String keyVaultUrl;
+  private String[] secretNames;
 
   public AzureKeyVaultConfig() {
   }
 
   public AzureKeyVaultConfig(String clientId, String tenantId, String clientSecret,
-      String keyVaultUrl) {
+      String keyVaultUrl, String[] secretNames) {
     this.clientId = clientId;
     this.tenantId = tenantId;
     this.clientSecret = clientSecret;
     this.keyVaultUrl = keyVaultUrl;
+    this.secretNames = secretNames;
   }
 
   public String getClientId() {
@@ -52,6 +55,10 @@ public class AzureKeyVaultConfig {
     return keyVaultUrl;
   }
 
+  public String[] getSecretNames() {
+    return secretNames;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -63,12 +70,12 @@ public class AzureKeyVaultConfig {
     AzureKeyVaultConfig that = (AzureKeyVaultConfig) o;
     return Objects.equals(clientId, that.clientId) && Objects
         .equals(tenantId, that.tenantId) && Objects.equals(clientSecret, that.clientSecret)
-        && Objects.equals(keyVaultUrl, that.keyVaultUrl);
+        && Objects.equals(keyVaultUrl, that.keyVaultUrl) && Arrays.equals(secretNames, that.secretNames);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(clientId, tenantId, clientSecret, keyVaultUrl);
+    return Objects.hash(clientId, tenantId, clientSecret, keyVaultUrl, Arrays.hashCode(secretNames));
   }
 
   @Override
@@ -78,6 +85,7 @@ public class AzureKeyVaultConfig {
         ", tenantId='" + tenantId + '\'' +
         ", clientSecret='" + clientSecret + '\'' +
         ", keyVaultUrl='" + keyVaultUrl + '\'' +
+        ", secretNames=" + Arrays.toString(secretNames) +
         '}';
   }
 
