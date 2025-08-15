@@ -26,12 +26,13 @@ public class AzureKeyVaultConfig {
   private String clientSecret;
   private String keyVaultUrl;
   private String[] secretNames;
+  private Boolean useManagedIdentity = false;
 
   public AzureKeyVaultConfig() {
   }
 
   public AzureKeyVaultConfig(String clientId, String tenantId, String clientSecret,
-      String keyVaultUrl, String[] secretNames) {
+      String keyVaultUrl, String[] secretNames, Boolean useManagedIdentity) {
     this.clientId = clientId;
     this.tenantId = tenantId;
     this.clientSecret = clientSecret;
@@ -58,6 +59,10 @@ public class AzureKeyVaultConfig {
   public String[] getSecretNames() {
     return secretNames;
   }
+  
+  public Boolean getUseManagedIdentity() {
+    return useManagedIdentity;
+  }
 
   @Override
   public boolean equals(Object o) {
@@ -70,12 +75,13 @@ public class AzureKeyVaultConfig {
     AzureKeyVaultConfig that = (AzureKeyVaultConfig) o;
     return Objects.equals(clientId, that.clientId) && Objects
         .equals(tenantId, that.tenantId) && Objects.equals(clientSecret, that.clientSecret)
-        && Objects.equals(keyVaultUrl, that.keyVaultUrl) && Arrays.equals(secretNames, that.secretNames);
+        && Objects.equals(keyVaultUrl, that.keyVaultUrl) && Arrays.equals(secretNames, that.secretNames)
+        && Objects.equals(useManagedIdentity, that.useManagedIdentity);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(clientId, tenantId, clientSecret, keyVaultUrl, Arrays.hashCode(secretNames));
+    return Objects.hash(clientId, tenantId, clientSecret, keyVaultUrl, Arrays.hashCode(secretNames), useManagedIdentity);
   }
 
   @Override
@@ -86,6 +92,7 @@ public class AzureKeyVaultConfig {
         ", clientSecret='" + clientSecret + '\'' +
         ", keyVaultUrl='" + keyVaultUrl + '\'' +
         ", secretNames=" + Arrays.toString(secretNames) +
+        ", useManagedIdentity=" + useManagedIdentity +
         '}';
   }
 

@@ -18,6 +18,7 @@ package com.github.hpgrahsl.kryptonite.kms.azure;
 
 import com.azure.core.exception.ResourceNotFoundException;
 import com.azure.identity.ClientSecretCredentialBuilder;
+import com.azure.identity.DefaultAzureCredentialBuilder;
 import com.azure.security.keyvault.secrets.SecretClient;
 import com.azure.security.keyvault.secrets.SecretClientBuilder;
 import com.azure.security.keyvault.secrets.models.SecretProperties;
@@ -37,13 +38,20 @@ public class AzureSecretResolver implements KeyMaterialResolver {
   public AzureSecretResolver(String jsonKmsConfig) {
     try {
       var keyVaultConfig = OBJECT_MAPPER.readValue(jsonKmsConfig,AzureKeyVaultConfig.class);
-      this.secretClient = new SecretClientBuilder()
-        .vaultUrl(keyVaultConfig.getKeyVaultUrl())
-        .credential(new ClientSecretCredentialBuilder()
+      var builder = new SecretClientBuilder()
+        .vaultUrl(keyVaultConfig.getKeyVaultUrl());
+      if (keyVaultConfig.getUseManagedIdentity()) {
+        builder.credential(new DefaultAzureCredentialBuilder().build());
+      }
+      else
+      {
+        builder.credential(new ClientSecretCredentialBuilder()
             .clientId(keyVaultConfig.getClientId())
             .clientSecret(keyVaultConfig.getClientSecret())
-            .tenantId(keyVaultConfig.getTenantId())
-            .build()).buildClient();
+            .tenantId(keyVaultConfig.getTenantId()).build());
+
+      }
+        this.secretClient = builder.buildClient();
       this.secretNames = Set.of(keyVaultConfig.getSecretNames());
     } catch (Exception exc) {
       throw new RuntimeException("failed to create " + AzureSecretResolver.class.getSimpleName(), exc);
